@@ -1,12 +1,13 @@
 var axios = require("axios");
 require("dotenv").config();
+var fs = require("fs");
 
 var keys = require('./keys')
 var Spotify = require('node-spotify-api');
 
 var spotify = new Spotify(keys.spotify);
 
-const liriCommand = process.argv[2];
+var liriCommand = process.argv[2];
 //var queryParameter = process.argv.slice(3);
 var queryParameter = "";
 
@@ -30,77 +31,97 @@ for (var i = 3; i < nodeArgs.length; i++) {
     }
 }
 
-switch (liriCommand) {
-    case "concert-this":
-        var queryUrl ="https://rest.bandsintown.com/artists/" + queryParameter.split(" ") + "/events?app_id=codingbootcamp";
-        console.log(queryUrl);      
-        axios.get(queryUrl).then(
-            function(response) {
-                var jsonData = response.data;
-                console.log(jsonData)
-                
-                 for (var i = 0; i < jsonData.length; i++) {
-                    var show = jsonData[i];
-                    console.log(show)
-                }	
-                
+function liri() {
+    switch (liriCommand) {
+        case "concert-this":
+            var queryUrl = "https://rest.bandsintown.com/artists/" + queryParameter.split(" ") + "/events?app_id=codingbootcamp";
+            console.log(queryUrl);
+            axios.get(queryUrl).then(
+                function (response) {
+                    var jsonData = response.data;
+                    console.log(jsonData)
+
+                    for (var i = 0; i < jsonData.length; i++) {
+                        var show = jsonData[i];
+                        console.log(show)
+                    }
+
+                });
+            // });
+            break;
+        case "spotify-this-song":
+            console.log("spotify for song " + queryParameter);
+            spotify.search({ type: 'track', query: queryParameter })
+
+                .then(function (response) {
+                    //for (var i = 0; i < response.tracks.items.length; i++) {
+                    // console.log(response.tracks.items[0].artists[0]);
+                    //console.log(response.tracks.items[0] );
+                    console.log("preview_url", response.tracks.items[0].preview_url);
+                    console.log("name", response.tracks.items[0].name);
+                    console.log("album name", response.tracks.items[0].album.name);
+                    var art = response.tracks.items[0].artists;
+                    for (var i = 0; i < art.length; i++) {
+                        console.log(art[i].name);
+                    }
+                    // console.log(response.tracks.items[0]);
+                    // }
+                    //console.log(response.tracks);
+                })
+                .catch(function (err) {
+                    console.log(err);
+                });
+            break;
+        case "movie-this":
+            console.log("movie wanted " + queryParameter);
+            var queryUrl = "http://www.omdbapi.com/?t=" + queryParameter + "&y=&plot=short&apikey=trilogy";
+            console.log(queryUrl);
+
+            axios.get(queryUrl).then(
+                function (response) {
+                    console.log("Title: " + response.data.Title);
+                    console.log("Release Year: " + response.data.Year);
+                    console.log("ImdbRating: " + response.data.imdbRating);
+                    console.log("Country: " + response.data.Country);
+                    console.table(response.data.Ratings)
+                    console.log("Rotten Tomatoes: " + response.data.Ratings[1].Value);
+                    console.log("Language: " + response.data.Lauguage);
+                    console.log("Plot: " + response.data.Plot);
+                    console.log("Actors: " + response.data.Actors);
+
+
+                    // console.log("Response: " + response.data);
+                    //  console.log(JSON.stringify(response, null, 4));
+                    //console.log(JSON.stringify(response));
+                });
+            break;
+        case "do-what-it-says":
+            fs.readFile("random.txt", "utf8", function (err, data) {
+                if (err) throw Error("error");
+                console.log(data);
+                var data_dwis = data.split(",");
+                liriCommand = data_dwis[0];
+                queryParameter = data_dwis[1];
+                liri();
             });
-           // });
-        break;
-    case "spotify-this-song":
-        console.log("spotify for song " + queryParameter);
-        spotify.search({ type: 'track', query: queryParameter })
-  .then(function(response) {
-    //for (var i = 0; i < response.tracks.items.length; i++) {
-      console.log(response.tracks.items[0].artists[0]);
-   // }
-  //console.log(response.tracks);
-  })
-  .catch(function(err) {
-    console.log(err);
-  });
-        break;
-    case "movie-this":
-        console.log("movie wanted " + queryParameter);
-        var queryUrl = "http://www.omdbapi.com/?t=" + queryParameter + "&y=&plot=short&apikey=trilogy";
-        console.log(queryUrl);
 
-        axios.get(queryUrl).then(
-            function (response) {
-                console.log("Title: " +  response.data.Title);
-                console.log("Release Year: " + response.data.Year);
-                console.log("ImdbRating: " +  response.data.imdbRating);
-                console.log("Country: " +  response.data.Country);
-                console.table(response.data.Ratings)
-                console.log("Rotten Tomatoes: " +  response.data.Ratings[1].Value);
-                console.log("Language: " +  response.data.Lauguage);
-                console.log("Plot: " + response.data.Plot);
-                console.log("Actors: " + response.data.Actors);
+            console.log("do what it says " + queryParameter);
+            break;
+        default:
+            console.log("default case, do nothing");
 
-                
-              // console.log("Response: " + response.data);
-              //  console.log(JSON.stringify(response, null, 4));
-               //console.log(JSON.stringify(response));
-            });
-        break;
-    case "do-what-it-says":
-        console.log("do what it says " + queryParameter);
-        break;
-    default:
-        console.log("default case, do nothing");
+    }
 
-}
+};
 
-
-
-
+liri();
 var movieName;
 
 // Then run a request with axios to the OMDB API with the movie specified
 // var queryUrl = "http://www.omdbapi.com/?t=" + queryParameter + "&y=&plot=short&apikey=trilogy";
 
 // This line is just to help us debug against the actual URL.
-console.log(queryUrl);
+//console.log(queryUrl);
 
 // axios.get(queryUrl).then(
 //     function (response) {
